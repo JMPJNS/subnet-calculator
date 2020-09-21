@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Linq;
-using System.Linq.Expressions;
+using System.Linq;  
 using System.Net;
-using Microsoft.VisualBasic;
 
 namespace SubnetCalculator
 {
@@ -10,8 +8,8 @@ namespace SubnetCalculator
     {
         static void Main(string[] args)
         {
-            var input = "192.168.1.5/16";
-            var subnetCount = 3;
+            var input = "172.16.30.0/24";
+            var subnetCount = 4;
 
             int prefixLength = int.Parse(
                 input.Split("/")[1]);
@@ -24,12 +22,44 @@ namespace SubnetCalculator
             var ip = ParseIPInput(input);
 
             var actualPrefixLength = CalculateActualPrefix(prefixLength, subnetCount);
-            var subnetMask = CalculateSubnetMaskString(actualPrefixLength);
-            var broadcastAdress = CalculateBroadcastAdressString(ip, actualPrefixLength);
-            var hostCount = CalcuateHostCount(actualPrefixLength);
-            var hostRange = CalculateHostRangeString(ip, actualPrefixLength);
-            
-            Console.Write(Convert.ToString(ip, 2));
+            var subnetMask = CalculateSubnetMask(actualPrefixLength);
+            var baseNetworkAdress = CalculateAdressBase(ip, actualPrefixLength);
+
+            PrintIP(ip, "IP");
+            PrintIP(subnetMask, "Subnet Mask");
+
+
+            for(int i = 0; i<subnetCount; i++) {
+                Console.WriteLine("Subnet " + i);
+                var currentBaseAdress = CalculateCurrentAdressBase(baseNetworkAdress, prefixLength, actualPrefixLength, i);
+                var broadcastAdress = CalculateBroadcastAdress(currentBaseAdress, actualPrefixLength);
+                var hostCount = CalcuateHostCount(actualPrefixLength);
+                var hostRange = CalculateHostRangeString(currentBaseAdress, actualPrefixLength);
+
+                PrintIP(currentBaseAdress, "Network Address");
+                PrintIP(broadcastAdress, "Broadcast Address");
+                Console.WriteLine("Host Count: "+hostCount);
+                Console.WriteLine("Host Range: "+hostRange);
+                Console.WriteLine("\n-----\n\n");
+            }
+        }
+
+        static void PrintIP(UInt32 ip, string name = null) {
+            if (name != null) {
+                Console.WriteLine(name);
+            }
+            Console.WriteLine(Convert.ToString(ip, 2));
+            Console.WriteLine(ConvertFromIntegerToIpAddress(ip));
+            Console.WriteLine("---");
+        }
+
+        static UInt32 CalculateCurrentAdressBase(UInt32 ipBase, int prefixLength, int actualPrefixLength, int count) {
+            return ipBase | (UInt32) (count << 32 - prefixLength - binaryNumLength(actualPrefixLength - prefixLength));            
+        }
+
+        static UInt32 CalculateAdressBase(UInt32 ip, int prefix) {
+            UInt32 highestHost = (UInt32) Math.Pow(2, 32 - prefix) - 1;
+            return ip & ~highestHost;
         }
 
         static UInt32 ParseIPInput(string input)
@@ -56,9 +86,13 @@ namespace SubnetCalculator
             if (subnetCount == 1)
                 return prefix;
             
-            var addedLength = (int) Math.Log2(subnetCount) + 1;
+            var addedLength = binaryNumLength(subnetCount);
             
             return prefix + addedLength;
+        }
+
+        static int binaryNumLength(int number) {
+            return (int) Math.Log2(number) + 1;
         }
 
         static UInt32 CalculateSubnetMask(int prefix)
