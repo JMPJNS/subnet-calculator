@@ -38,7 +38,7 @@ namespace SubnetCalculator
                 var currentBaseAdress = CalculateCurrentAdressBase(baseNetworkAdress, prefixLength, actualPrefixLength, i);
                 var broadcastAdress = CalculateBroadcastAdress(currentBaseAdress, actualPrefixLength);
                 var hostCount = CalcuateHostCount(actualPrefixLength);
-                var hostRange = $"{ConvertFromIntegerToIpAddress(currentBaseAdress)} - {ConvertFromIntegerToIpAddress(broadcastAdress)}";
+                var hostRange = $"{ConvertFromIntegerToIpAddress(currentBaseAdress+1)} - {ConvertFromIntegerToIpAddress(broadcastAdress-1)}";
 
                 PrintIP(currentBaseAdress, "Network Address");
                 PrintIP(broadcastAdress, "Broadcast Address");
