@@ -8,7 +8,7 @@ namespace SubnetCalculator
     {
         static void Main(string[] args)
         {
-            var input = "172.16.30.0/24";
+            var input = "192.168.8.101/24";
             var subnetCount = 4;
 
             int prefixLength = int.Parse(
@@ -23,7 +23,7 @@ namespace SubnetCalculator
 
             var actualPrefixLength = CalculateActualPrefix(prefixLength, subnetCount);
             var subnetMask = CalculateSubnetMask(actualPrefixLength);
-            var baseNetworkAdress = CalculateAdressBase(ip, actualPrefixLength);
+            var baseNetworkAdress = CalculateAdressBase(ip, prefixLength);
 
             PrintIP(ip, "IP");
             Console.WriteLine("Prefix Length: " + prefixLength);
@@ -35,7 +35,7 @@ namespace SubnetCalculator
 
             for(int i = 0; i<subnetCount; i++) {
                 Console.WriteLine("Subnet " + (i+1));
-                var currentBaseAdress = CalculateCurrentAdressBase(baseNetworkAdress, prefixLength, actualPrefixLength, i);
+                var currentBaseAdress = CalculateCurrentAdressBase(baseNetworkAdress, prefixLength, actualPrefixLength, i, subnetCount);
                 var broadcastAdress = CalculateBroadcastAdress(currentBaseAdress, actualPrefixLength);
                 var hostCount = CalcuateHostCount(actualPrefixLength);
                 var hostRange = $"{ConvertFromIntegerToIpAddress(currentBaseAdress+1)} - {ConvertFromIntegerToIpAddress(broadcastAdress-1)}";
@@ -57,8 +57,13 @@ namespace SubnetCalculator
             Console.WriteLine("---");
         }
 
-        static UInt32 CalculateCurrentAdressBase(UInt32 ipBase, int prefixLength, int actualPrefixLength, int count) {
-            return ipBase | (UInt32) (count << 32 - prefixLength - binaryNumLength(actualPrefixLength - prefixLength) - 1);            
+        static UInt32 CalculateCurrentAdressBase(UInt32 ipBase, int prefixLength, int actualPrefixLength, int count, int subnetCount) {
+            var t = ipBase | (UInt32) ((UInt32) count << 32-prefixLength-binaryNumLength(subnetCount - 1));            
+            return t;
+        }
+
+        static UInt32 RotateRight(UInt32 number, int bits) {
+            return (number >> bits) | (number << (31 - bits));
         }
 
         static UInt32 CalculateAdressBase(UInt32 ip, int prefix) {
@@ -96,12 +101,12 @@ namespace SubnetCalculator
         }
 
         static int binaryNumLength(int number) {
-            return (int) Math.Log2(number);
+            return Convert.ToString(number, 2).Length;
         }
 
         static UInt32 CalculateSubnetMask(int prefix)
         {
-            return Convert.ToUInt32( ~0u << (32 - prefix));
+            return Convert.ToUInt32( ~0u << (32 - prefix + 1));
         }
         
         static string CalculateSubnetMaskString(int prefix)
